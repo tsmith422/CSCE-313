@@ -1,5 +1,5 @@
 #include <iostream>
-
+// Test thingy 
 struct Point {
     int x, y;
 
