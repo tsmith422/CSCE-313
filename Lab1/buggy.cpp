@@ -25,7 +25,7 @@ public:
     {
     }
 
-    void addPoints(/* formal parameter for unsized array called pts */ Point **pts)
+    void addPoints(/* formal parameter for unsized array called pts */ Point *pts)
     {
         for (int i = 0; i <= vertices; i++)
         {
@@ -64,7 +64,7 @@ int main()
     // adding points to tri
     Point triPts[3] = {tri1, tri2, tri3};
     Shape *tri = new Shape(3);
-    tri.addPoints(triPts);
+    tri->addPoints(triPts);
 
     // FIXME: create the following points using your preferred struct
     //        definition:
