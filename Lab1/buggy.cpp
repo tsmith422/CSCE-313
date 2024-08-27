@@ -56,6 +56,9 @@ int main()
     //          tri1 = (0, 0)
     //          tri2 = (1, 2)
     //          tri3 = (2, 0)
+    struct Point tri1;
+    struct Point tri2 = {1, 2};
+    struct Point tri3(2, 0);
 
     // adding points to tri
     Point triPts[3] = {tri1, tri2, tri3};
