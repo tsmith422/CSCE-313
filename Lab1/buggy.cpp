@@ -23,13 +23,21 @@ public:
 
     ~Shape()
     {
+        for (size_t i = 0; i <= vertices; ++i)
+        {
+            delete points[i];
+            points[i] = nullptr;
+        }
+        delete[] points;
+        points = nullptr;
+        vertices = 0;
     }
 
     void addPoints(/* formal parameter for unsized array called pts */ Point *pts)
     {
         for (int i = 0; i <= vertices; i++)
         {
-            memcpy(points[i], &pts[i % vertices], sizeof(Point));
+            memcpy(&points[i], &pts[i % vertices], sizeof(Point));
         }
     }
 
@@ -82,5 +90,11 @@ int main()
     Shape *quad = new Shape(4);
     quad->addPoints(quadPts);
 
+    // delete quad;
+    // delete tri;
+    // quad = nullptr;
+    // tri = nullptr;
     // FIXME: print out area of tri and area of quad
+    std::cout << tri->area() << std::endl;
+    std::cout << quad->area() << std::endl;
 }
