@@ -14,6 +14,7 @@ class Shape
     int vertices;
     Point **points;
 
+public:
     Shape(int _vertices)
     {
         vertices = _vertices;
@@ -32,7 +33,7 @@ class Shape
         }
     }
 
-    double *area()
+    double area()
     {
         int temp = 0;
         for (int i = 0; i <= vertices; i++)
@@ -45,7 +46,7 @@ class Shape
             temp += (lhs - rhs);
         }
         double area = abs(temp) / 2.0;
-        return &area;
+        return area;
     }
 };
 
