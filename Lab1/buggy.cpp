@@ -80,7 +80,7 @@ int main()
     // adding points to quad
     Point quadPts[4] = {quad1, quad2, quad3, quad4};
     Shape *quad = new Shape(4);
-    quad.addPoints(quadPts);
+    quad->addPoints(quadPts);
 
     // FIXME: print out area of tri and area of quad
 }
