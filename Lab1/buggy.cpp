@@ -72,6 +72,10 @@ int main()
     //          quad2 = (0, 2)
     //          quad3 = (2, 2)
     //          quad4 = (2, 0)
+    struct Point quad1(0, 0);
+    struct Point quad2(0, 2);
+    struct Point quad3(2, 2);
+    struct Point quad4(2, 0);
 
     // adding points to quad
     Point quadPts[4] = {quad1, quad2, quad3, quad4};
