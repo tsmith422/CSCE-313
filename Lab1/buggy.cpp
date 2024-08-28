@@ -19,6 +19,8 @@ public:
     {
         vertices = _vertices;
         points = new Point *[vertices + 1];
+        for (int i = 0; i <= vertices; ++i)
+            points[i] = nullptr;
     }
 
     ~Shape()
@@ -37,14 +39,14 @@ public:
     {
         for (int i = 0; i <= vertices; i++)
         {
-            memcpy(&points[i], &pts[i % vertices], sizeof(Point));
+            memcpy(points[i], &pts[i % vertices], sizeof(Point));
         }
     }
 
     double area()
     {
         int temp = 0;
-        for (int i = 0; i <= vertices; i++)
+        for (int i = 0; i < vertices; i++)
         {
             // FIXME: there are two methods to access members of pointers
             //        use one to fix lhs and the other to fix rhs
