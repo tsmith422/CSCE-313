@@ -1,4 +1,5 @@
 #include <iostream>
+// included cstring for memcpy
 #include <cstring>
 
 struct Point
@@ -15,10 +16,13 @@ class Shape
     Point **points;
 
 public:
+    // made these functions public so main() can use Shape constructors and methods
     Shape(int _vertices)
     {
         vertices = _vertices;
         points = new Point *[vertices + 1];
+
+        // initialized points with default Point values
         for (int i = 0; i <= vertices; ++i)
             points[i] = new Point();
     }
@@ -35,7 +39,8 @@ public:
         vertices = 0;
     }
 
-    void addPoints(/* formal parameter for unsized array called pts */ Point *pts)
+    // added Point *pts parameter
+    void addPoints(Point *pts)
     {
         for (int i = 0; i <= vertices; i++)
         {
@@ -43,15 +48,16 @@ public:
         }
     }
 
+    // changed return type from double* to double
     double area()
     {
         int temp = 0;
         for (int i = 0; i < vertices; i++)
         {
-            // FIXME: there are two methods to access members of pointers
-            //        use one to fix lhs and the other to fix rhs
-
+            // two methods of accessing pointer members:
+            // -> operator
             int lhs = points[i]->x * points[i + 1]->y;
+            // dereferencing the pointer
             int rhs = (*points[i + 1]).x * (*points[i]).y;
             temp += (lhs - rhs);
         }
@@ -62,26 +68,21 @@ public:
 
 int main()
 {
-    // FIXME: create the following points using the three different methods
-    //        of defining structs:
-    //          tri1 = (0, 0)
-    //          tri2 = (1, 2)
-    //          tri3 = (2, 0)
+    // three methods of creating structs:
+    // default constructor
     struct Point tri1;
+    // assignment operator
     struct Point tri2 = {1, 2};
+    // parameterized constructor
     struct Point tri3(2, 0);
 
     // adding points to tri
     Point triPts[3] = {tri1, tri2, tri3};
     Shape *tri = new Shape(3);
+    // used -> operator to reference addPoints(), rather than .addPoints()
     tri->addPoints(triPts);
 
-    // FIXME: create the following points using your preferred struct
-    //        definition:
-    //          quad1 = (0, 0)
-    //          quad2 = (0, 2)
-    //          quad3 = (2, 2)
-    //          quad4 = (2, 0)
+    // created using parameterized constructor
     struct Point quad1(0, 0);
     struct Point quad2(0, 2);
     struct Point quad3(2, 2);
@@ -90,11 +91,15 @@ int main()
     // adding points to quad
     Point quadPts[4] = {quad1, quad2, quad3, quad4};
     Shape *quad = new Shape(4);
+
+    // used -> operator to reference addPoints(), rather than .addPoints()
     quad->addPoints(quadPts);
 
-    // FIXME: print out area of tri and area of quad
+    // printed out the area() functions for both tri and quad
     std::cout << "Area of tri is: " << tri->area() << std::endl;
     std::cout << "Area of quad is: " << quad->area() << std::endl;
+
+    // deallocate memory and ensure no dangling pointers
     delete quad;
     delete tri;
     quad = nullptr;
