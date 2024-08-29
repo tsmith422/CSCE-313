@@ -20,7 +20,7 @@ public:
         vertices = _vertices;
         points = new Point *[vertices + 1];
         for (int i = 0; i <= vertices; ++i)
-            points[i] = nullptr;
+            points[i] = new Point();
     }
 
     ~Shape()
@@ -43,7 +43,7 @@ public:
         }
     }
 
-    double area()
+    double *area()
     {
         int temp = 0;
         for (int i = 0; i < vertices; i++)
@@ -56,7 +56,7 @@ public:
             temp += (lhs - rhs);
         }
         double area = abs(temp) / 2.0;
-        return area;
+        return &area;
     }
 };
 
