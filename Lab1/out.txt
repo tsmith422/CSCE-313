@@ -1,0 +1,2 @@
+Area of tri is: 2
+Area of quad is: 4
