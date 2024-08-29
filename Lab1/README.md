@@ -12,4 +12,4 @@ Submit your program to Gradescope and it should autograde for you and generate a
 
 ## Due Date
 
-The assignment is due midnight Sept 4. Note that the late penalty for submission is 1% per hour.
+The assignment is due midnight Sept 1. Note that the late penalty for submission is 1% per hour.
