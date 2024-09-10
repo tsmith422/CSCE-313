@@ -7,6 +7,7 @@ This repository contains all the work from my "Intro to Computer Systems" course
 ### Labs
 
 - [**Lab 1**](https://github.com/tsmith422/CSCE-313/tree/main/Lab1): Environment Setup, Debugging, and C++ Refresh
+- [**Lab 2**](https://github.com/tsmith422/CSCE-313/tree/main/Lab2): Introduction to Unnamed Pipes
 
 ### Programming Assignments
 
@@ -16,6 +17,9 @@ This repository contains all the work from my "Intro to Computer Systems" course
 
 ### Lab 1: Environment Setup, Debugging, and C++ Refresh
 In this lab, we set up the development environment, learned debugging techniques, and refreshed our knowledge of C++.
+
+### Lab 2: Introduction to Unnamed Pipes
+In this lab, we created a pipe and forked to create children in order to run two commands using C++.
 
 ## Programming Assignments
 
