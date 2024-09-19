@@ -12,6 +12,7 @@
 */
 #include "common.h"
 #include "FIFORequestChannel.h"
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -22,10 +23,12 @@ int main(int argc, char *argv[])
 	double t = 0.0;
 	int e = 1;
 	string filename = "";
+	int m = MAX_MESSAGE;
+	bool new_chan = false;
+	vector<FIFORequestChannel *> channels;
 
 	// Add other arguments here
-	int m = MAX_MESSAGE;
-	while ((opt = getopt(argc, argv, "p:t:e:f:")) != -1)
+	while ((opt = getopt(argc, argv, "p:t:e:f:m:c")) != -1)
 	{
 		switch (opt)
 		{
@@ -44,6 +47,9 @@ int main(int argc, char *argv[])
 		case 'm':
 			m = atoi(optarg);
 			break;
+		case 'c':
+			new_chan = true;
+			break;
 		}
 	}
 
@@ -53,8 +59,28 @@ int main(int argc, char *argv[])
 	// server needs './server', '-m', '<val for -m arg>', 'NULL'
 	// fork
 	// In the child, run execvp using the server args.
+	char *args[] = {(char *)"./server", (char *)"-m", (char *)m, nullptr};
+	pid_t server_process = fork();
+	if (server_process == 0)
+	{
+		execvp(args[0], args);
+	}
 
-	FIFORequestChannel chan("control", FIFORequestChannel::CLIENT_SIDE);
+	FIFORequestChannel cont_chan("control", FIFORequestChannel::CLIENT_SIDE);
+	channels.push_back(&cont_chan);
+
+	if (new_chan)
+	{
+		// send newchannel request to the server
+		MESSAGE_TYPE nc = NEWCHANNEL_MSG;
+		cont_chan.cwrite(&nc, sizeof(MESSAGE_TYPE));
+		// create a variable to hold the name
+		// create the response from the server
+		// call the FIFORequestChannel constructor with the name from the server
+		// Push the new channel into the vector
+	}
+
+	FIFORequestChannel chan = *(channels.back());
 
 	// Task 4:
 	// Request a new channel
@@ -109,8 +135,15 @@ int main(int argc, char *argv[])
 	delete[] buf2;
 	// delete[] buf3;
 
+	// if necessary, close and delete the new channel
+	if (new_chan)
+	{
+		// do your close and deletes
+	}
+
 	// Task 5:
 	//  Closing all the channels
 	MESSAGE_TYPE m = QUIT_MSG;
 	chan.cwrite(&m, sizeof(MESSAGE_TYPE));
+	waitpid(server_process, nullptr, 0);
 }
