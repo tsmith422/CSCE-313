@@ -89,10 +89,25 @@ int main(int argc, char *argv[])
 	strcpy(buf2 + sizeof(filemsg), fname.c_str());
 	chan.cwrite(buf2, len); // I want the file length
 
-	delete[] buf2;
 	__int64_t file_length;
 	chan.cread(&file_length, sizeof(__int64_t));
 	cout << "The length of " << fname << " is " << file_length << endl;
+
+	// char* buf3 = create buffer of size buff capacity (m)
+
+	// loop over the segments in the file filesize / buff capacity(m)
+	// create filemsg instance
+	filemsg *file_req = (filemsg *)buf2;
+	// file_req->offset = set offset in the file
+	// file req->length = set the length. Be careful of the last segment
+	// send the request (buf2)
+	chan.cwrite(buf2, len);
+	// receive the response
+	// cread into buf3 length file_req->len
+	// write buf3 into file: received/filename
+
+	delete[] buf2;
+	// delete[] buf3;
 
 	// Task 5:
 	//  Closing all the channels
