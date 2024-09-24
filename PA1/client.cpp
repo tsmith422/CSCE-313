@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	// server needs './server', '-m', '<val for -m arg>', 'NULL'
 	// fork
 	// In the child, run execvp using the server args.
-	char *args[] = {(char *)"./server", (char *)"-m", (char *)m, nullptr};
+	char *args[] = {(char *)"./server", (char *)"-m", (char *)to_string(m).c_str(), nullptr};
 	pid_t server_process = fork();
 	if (server_process == 0)
 	{
