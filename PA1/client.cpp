@@ -80,9 +80,6 @@ int main(int argc, char *argv[])
 			execvp(args[0], args);
 			return 1;
 		}
-	} else {
-		return 1;
-	}
 
 	FIFORequestChannel cont_chan("control", FIFORequestChannel::CLIENT_SIDE);
 	channels.push_back(&cont_chan);
