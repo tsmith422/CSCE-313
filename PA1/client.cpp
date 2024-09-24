@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	double t = 0.0;
 	int e = 1;
 	string filename = "";
-	int m = MAX_MESSAGE;
+	int m_buff = MAX_MESSAGE;
 	bool new_chan = false;
 	vector<FIFORequestChannel *> channels;
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 			filename = optarg;
 			break;
 		case 'm': // specifies the size of the buffer for communication
-			m = atoi(optarg);
+			m_buff = atoi(optarg);
 			break;
 		case 'c': // flag, if present, creates a new communication channel
 			new_chan = true;
@@ -60,22 +60,28 @@ int main(int argc, char *argv[])
 	// fork
 	// In the child, run execvp using the server args.
 	pid_t server_process = fork();
-	
-	if (server_process < 0){
+
+	if (server_process < 0)
+	{
 		return 1;
 	}
 
 	if (server_process == 0)
 	{
-		if(m != MAX_MESSAGE){
-			char *args[] = {(char *)"./server", (char *)"-m", (char *)to_string(m).c_str(), nullptr};
+		if (m_buff != MAX_MESSAGE)
+		{
+			char *args[] = {(char *)"./server", (char *)"-m", (char *)to_string(m_buff).c_str(), nullptr};
 			execvp(args[0], args);
 			return 1;
-		}else{
+		}
+		else
+		{
 			char *args[] = {(char *)"./server", nullptr};
 			execvp(args[0], args);
 			return 1;
 		}
+	} else {
+		return 1;
 	}
 
 	FIFORequestChannel cont_chan("control", FIFORequestChannel::CLIENT_SIDE);
@@ -109,7 +115,7 @@ int main(int argc, char *argv[])
 		chan.cwrite(buf, sizeof(datamsg)); // question
 		double reply;
 		chan.cread(&reply, sizeof(double)); // answer
-		cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+		// cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
 	}
 
 	// Else, if p != -1, request 1000 datapoints
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
 
 	__int64_t file_length;
 	chan.cread(&file_length, sizeof(__int64_t));
-	cout << "The length of " << fname << " is " << file_length << endl;
+	// cout << "The length of " << fname << " is " << file_length << endl;
 
 	// char* buf3 = create buffer of size buff capacity (m)
 
