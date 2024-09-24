@@ -100,14 +100,17 @@ int main(int argc, char *argv[])
 	// Task 2:
 	// Request data points
 	// Single datapoint, only run p, t, e != -1
-	char buf[MAX_MESSAGE]; // 256
-	datamsg x(1, 0.0, 1);  // change from hardcoding to user's values
+	if (p != -1 && t != -1 && e != -1)
+	{
+		char buf[MAX_MESSAGE]; // 256
+		datamsg x(p, t, e);	   // change from hardcoding to user's values
 
-	memcpy(buf, &x, sizeof(datamsg));
-	chan.cwrite(buf, sizeof(datamsg)); // question
-	double reply;
-	chan.cread(&reply, sizeof(double)); // answer
-	cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+		memcpy(buf, &x, sizeof(datamsg));
+		chan.cwrite(buf, sizeof(datamsg)); // question
+		double reply;
+		chan.cread(&reply, sizeof(double)); // answer
+		cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+	}
 
 	// Else, if p != -1, request 1000 datapoints
 	// Loop over 1st 1000 lines
@@ -119,7 +122,7 @@ int main(int argc, char *argv[])
 	// Request files
 	// sending a nonsense message, need to change
 	filemsg fm(0, 0);
-	string fname = "1.csv";
+	string fname = filename;
 
 	int len = sizeof(filemsg) + (fname.size() + 1);
 	char *buf2 = new char[len];
