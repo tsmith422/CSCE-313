@@ -32,22 +32,22 @@ int main(int argc, char *argv[])
 	{
 		switch (opt)
 		{
-		case 'p':
+		case 'p': // patient id
 			p = atoi(optarg);
 			break;
-		case 't':
+		case 't': // time in seconds
 			t = atof(optarg);
 			break;
-		case 'e':
+		case 'e': // ecg number
 			e = atoi(optarg);
 			break;
-		case 'f':
+		case 'f': // filename
 			filename = optarg;
 			break;
-		case 'm':
+		case 'm': // specifies the size of the buffer for communication
 			m = atoi(optarg);
 			break;
-		case 'c':
+		case 'c': // flag, if present, creates a new communication channel
 			new_chan = true;
 			break;
 		}
