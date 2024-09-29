@@ -9,12 +9,149 @@
 	Name: Taylor Smith
 	UIN: 732003356
 	Date: 9/17/24
+
+	Added edits as an example to base starter code
+	Kyle Lang
+	Date: 9/18/2024
 */
 #include "common.h"
+#include "stdlib.h"
 #include "FIFORequestChannel.h"
 #include <sys/wait.h>
+// #include <unistd.h>
 
 using namespace std;
+
+// Task 2.1: Single Data Point transfer
+// Base code already provides an implementation for this task
+void requestDataPoint(FIFORequestChannel &chan, int p, double t, int e)
+{
+	// char buf[MAX_MESSAGE];
+	datamsg x(p, t, e); // Request patient data point
+
+	chan.cwrite(&x, sizeof(datamsg)); // Directly write datamsg into pipe
+	double reply;
+	chan.cread(&reply, sizeof(double));
+
+	cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+}
+
+// Task 2.2: 1000 Data Point transfer into received/x1.csv
+// Request 1000 data points from server and write results into received/x1.csv with same file format as the patient {1-15}.csv files
+void requestData(FIFORequestChannel &chan, int p)
+{
+	// Open x1.csv file under ./received/
+	ofstream ofs("./received/x1.csv");
+
+	// Iterate 1000 times
+	double t = 0.0;
+	for (int i = 0; i < 1000; ++i)
+	{
+		// Write time into x1.csv (Time is 0.004 second deviations)
+		datamsg msg1(p, t, 1); // Request ecg1
+
+		// Write ecg1 datamsg into pipe
+		chan.cwrite(&msg1, sizeof(datamsg));
+
+		// Read response for ecg1 from pipe
+		double ecg1;
+		chan.cread(&ecg1, sizeof(double));
+
+		// Write ecg1 value into x1.csv
+		ofs << t << "," << ecg1 << ",";
+
+		datamsg msg2(p, t, 2); // Request ecg2
+
+		// Write ecg2 datamsg into pipe
+		chan.cwrite(&msg2, sizeof(datamsg));
+
+		// Read response for ecg2 from pipe
+		double ecg2;
+		chan.cread(&ecg2, sizeof(double));
+
+		// Write ecg2 value into x1.csv
+		ofs << ecg2 << endl;
+
+		t += 0.004; // Increment time
+	}
+
+	// CLOSE YOUR FILE
+	ofs.close();
+}
+
+// Task 3: Request File from server
+// Request a file under BIMDC/ given the file name, by sequentially requesting data chunks from the file and copying into a new file of the same name into received/
+void requestFile(FIFORequestChannel &chan, const string &fname)
+{
+	filemsg fm(0, 0); // Request file length message
+
+	// Calculate file length request message and set up buffer
+	int len = sizeof(filemsg) + fname.size() + 1;
+	char *buf2 = new char[len];
+
+	// Copy filemsg fm into msgBuffer, attach filename to the end of filemsg fm in msgBuffer, then write msgBuffer into pipe
+	memcpy(buf2, &fm, sizeof(filemsg));
+	strcpy(buf2 + sizeof(filemsg), fname.c_str());
+	chan.cwrite(buf2, len);
+
+	// Read file length response from server for specified file
+	__int64_t file_length;
+	chan.cread(&file_length, sizeof(__int64_t));
+	cout << "The length of " << fname << " is " << file_length << endl;
+
+	// Set up output file under received folder
+	// Can use any file opening method
+	ofstream ofs("./received/" + fname, ios::binary);
+
+	// Request data chunks from server and output into file
+	// Loop from start of file to file_length
+	__int64_t offset = 0;
+	while (offset < file_length)
+	{
+		// Create filemsg for data chunk range
+		// Assign data chunk range properly so that the data chunk to fetch from the file does NOT exceed the file length
+		// (i.e. take minimum between the two)
+		__int64_t chunk_size = min(file_length - offset, (__int64_t)MAX_MESSAGE);
+		fm = filemsg(offset, chunk_size);
+
+		// Copy filemsg into buf2 buffer and write into pipe
+		// File name need not be re-copied into buf2, as filemsg struct object is staticly sized and therefore the file
+		// name is unchanged when filemsg is re-copied into buf2
+		memcpy(buf2, &fm, sizeof(filemsg));
+		chan.cwrite(buf2, len);
+
+		// Read data chunk response from server into separate data buffer
+		char *data = new char[chunk_size];
+		chan.cread(data, chunk_size);
+
+		// Write data chunk into new file
+		ofs.write(data, chunk_size);
+		delete[] data;
+
+		offset += chunk_size;
+	}
+
+	// CLOSE YOUR FILE
+	ofs.close();
+	delete[] buf2;
+}
+
+// Task 4: Request a new FIFORequestChannel
+// Send a request to the server to establish a new FIFORequestChannel, and use the servers response to create the client's FIFORequestChannel
+// Client must now communicate over this new RequestChannel for any data point or file transfers
+void openChannel(FIFORequestChannel &chan, FIFORequestChannel *&chan2)
+{
+	MESSAGE_TYPE m = NEWCHANNEL_MSG;
+	// Write new channel message into pipe
+	chan.cwrite(&m, sizeof(MESSAGE_TYPE));
+
+	// Read response from pipe (Can create any static sized char array that fits server response, e.g. MAX_MESSAGE)
+	char newPipeName[MAX_MESSAGE];
+	chan.cread(newPipeName, MAX_MESSAGE);
+
+	// Create a new FIFORequestChannel object using the name sent by server
+	chan2 = new FIFORequestChannel(newPipeName, FIFORequestChannel::CLIENT_SIDE);
+}
 
 int main(int argc, char *argv[])
 {
@@ -24,10 +161,10 @@ int main(int argc, char *argv[])
 	int e = 1;
 	string filename = "";
 	int m_buff = MAX_MESSAGE;
-	bool new_chan = false;
+	bool c = false;
 	vector<FIFORequestChannel *> channels;
 
-	// Add other arguments here
+	// Add other arguments here   |   Need to add -c, -m flags. BE CAREFUL OF getopt() NOTATION
 	while ((opt = getopt(argc, argv, "p:t:e:f:m:c")) != -1)
 	{
 		switch (opt)
@@ -48,17 +185,11 @@ int main(int argc, char *argv[])
 			m_buff = atoi(optarg);
 			break;
 		case 'c': // flag, if present, creates a new communication channel
-			new_chan = true;
+			c = true;
 			break;
 		}
 	}
 
-	// Task 1:
-	// Run the server process as a child of the client process
-	// give args for the server
-	// server needs './server', '-m', '<val for -m arg>', 'NULL'
-	// fork
-	// In the child, run execvp using the server args.
 	pid_t server_process = fork();
 
 	if (server_process < 0)
@@ -80,88 +211,46 @@ int main(int argc, char *argv[])
 			execvp(args[0], args);
 			return 1;
 		}
-
-	FIFORequestChannel cont_chan("control", FIFORequestChannel::CLIENT_SIDE);
-	channels.push_back(&cont_chan);
-
-	if (new_chan)
-	{
-		// send newchannel request to the server
-		MESSAGE_TYPE nc = NEWCHANNEL_MSG;
-		cont_chan.cwrite(&nc, sizeof(MESSAGE_TYPE));
-		// create a variable to hold the name
-		// create the response from the server
-		// call the FIFORequestChannel constructor with the name from the server
-		// Push the new channel into the vector
 	}
 
-	FIFORequestChannel chan = *(channels.back());
+	FIFORequestChannel chan("control", FIFORequestChannel::CLIENT_SIDE);
+	FIFORequestChannel *chan2 = nullptr;
 
 	// Task 4:
-	// Request a new channel
+	// Request a new channel (e.g. -c)
+	// Should use this new channel to communicate with server (still use control channel for sending QUIT_MSG)
+	if (c)
+		openChannel(chan, chan2);
 
-	// Task 2:
+	// Task 2.1 + 2.2:
 	// Request data points
-	// Single datapoint, only run p, t, e != -1
-	if (p != -1 && t != -1 && e != -1)
+	if (p)
 	{
-		char buf[MAX_MESSAGE]; // 256
-		datamsg x(p, t, e);	   // change from hardcoding to user's values
+		if (t)
+			requestDataPoint(chan, p, t, e); // (e.g. './client -p 1 -t 0.000 -e 1')
 
-		memcpy(buf, &x, sizeof(datamsg));
-		chan.cwrite(buf, sizeof(datamsg)); // question
-		double reply;
-		chan.cread(&reply, sizeof(double)); // answer
-		// cout << "For person " << p << ", at time " << t << ", the value of ecg " << e << " is " << reply << endl;
+		else
+			requestData(chan, p); // (e.g. './client -p 1')
 	}
-
-	// Else, if p != -1, request 1000 datapoints
-	// Loop over 1st 1000 lines
-	// send request for ecg 1
-	// send request for ecg 2
-	// write line to received/x1.csv
-
 	// Task 3:
-	// Request files
-	// sending a nonsense message, need to change
-	filemsg fm(0, 0);
-	string fname = filename;
-
-	int len = sizeof(filemsg) + (fname.size() + 1);
-	char *buf2 = new char[len];
-	memcpy(buf2, &fm, sizeof(filemsg));
-	strcpy(buf2 + sizeof(filemsg), fname.c_str());
-	chan.cwrite(buf2, len); // I want the file length
-
-	__int64_t file_length;
-	chan.cread(&file_length, sizeof(__int64_t));
-	// cout << "The length of " << fname << " is " << file_length << endl;
-
-	// char* buf3 = create buffer of size buff capacity (m)
-
-	// loop over the segments in the file filesize / buff capacity(m)
-	// create filemsg instance
-	filemsg *file_req = (filemsg *)buf2;
-	// file_req->offset = set offset in the file
-	// file req->length = set the length. Be careful of the last segment
-	// send the request (buf2)
-	chan.cwrite(buf2, len);
-	// receive the response
-	// cread into buf3 length file_req->len
-	// write buf3 into file: received/filename
-
-	delete[] buf2;
-	// delete[] buf3;
-
-	// if necessary, close and delete the new channel
-	if (new_chan)
+	// Request files (e.g. './client -f 1.csv')
+	if (!filename.empty())
 	{
-		// do your close and deletes
+		requestFile(chan, filename);
 	}
 
 	// Task 5:
 	//  Closing all the channels
 	MESSAGE_TYPE m = QUIT_MSG;
 	chan.cwrite(&m, sizeof(MESSAGE_TYPE));
-	waitpid(server_process, nullptr, 0);
+
+	if (chan2)
+	{
+		chan2->cwrite(&m, sizeof(MESSAGE_TYPE));
+		delete chan2;
+	}
+
+	// Wait on children
+	wait(nullptr);
+	return 0;
 }
