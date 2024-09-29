@@ -18,7 +18,6 @@
 #include "stdlib.h"
 #include "FIFORequestChannel.h"
 #include <sys/wait.h>
-// #include <unistd.h>
 
 using namespace std;
 
@@ -26,9 +25,10 @@ using namespace std;
 // Base code already provides an implementation for this task
 void requestDataPoint(FIFORequestChannel &chan, int p, double t, int e)
 {
-	// char buf[MAX_MESSAGE];
+	char buf[MAX_MESSAGE];
 	datamsg x(p, t, e); // Request patient data point
 
+	memcpy(buf, &x, sizeof(datamsg));
 	chan.cwrite(&x, sizeof(datamsg)); // Directly write datamsg into pipe
 	double reply;
 	chan.cread(&reply, sizeof(double));
