@@ -18,6 +18,7 @@
 #include "stdlib.h"
 #include "FIFORequestChannel.h"
 #include <sys/wait.h>
+#include <chrono>
 
 using namespace std;
 
@@ -83,57 +84,45 @@ void requestData(FIFORequestChannel &chan, int p)
 // Request a file under BIMDC/ given the file name, by sequentially requesting data chunks from the file and copying into a new file of the same name into received/
 void requestFile(FIFORequestChannel &chan, const string &fname)
 {
-	filemsg fm(0, 0); // Request file length message
+	using namespace std::chrono;
+	auto start = high_resolution_clock::now();
 
-	// Calculate file length request message and set up buffer
+	filemsg fm(0, 0); // Request file length message
 	int len = sizeof(filemsg) + fname.size() + 1;
 	char *buf2 = new char[len];
 
-	// Copy filemsg fm into msgBuffer, attach filename to the end of filemsg fm in msgBuffer, then write msgBuffer into pipe
 	memcpy(buf2, &fm, sizeof(filemsg));
 	strcpy(buf2 + sizeof(filemsg), fname.c_str());
 	chan.cwrite(buf2, len);
 
-	// Read file length response from server for specified file
 	__int64_t file_length;
 	chan.cread(&file_length, sizeof(__int64_t));
 	cout << "The length of " << fname << " is " << file_length << endl;
 
-	// Set up output file under received folder
-	// Can use any file opening method
 	ofstream ofs("./received/" + fname, ios::binary);
 
-	// Request data chunks from server and output into file
-	// Loop from start of file to file_length
 	__int64_t offset = 0;
 	while (offset < file_length)
 	{
-		// Create filemsg for data chunk range
-		// Assign data chunk range properly so that the data chunk to fetch from the file does NOT exceed the file length
-		// (i.e. take minimum between the two)
 		__int64_t chunk_size = min(file_length - offset, (__int64_t)MAX_MESSAGE);
 		fm = filemsg(offset, chunk_size);
-
-		// Copy filemsg into buf2 buffer and write into pipe
-		// File name need not be re-copied into buf2, as filemsg struct object is staticly sized and therefore the file
-		// name is unchanged when filemsg is re-copied into buf2
 		memcpy(buf2, &fm, sizeof(filemsg));
 		chan.cwrite(buf2, len);
 
-		// Read data chunk response from server into separate data buffer
 		char *data = new char[chunk_size];
 		chan.cread(data, chunk_size);
-
-		// Write data chunk into new file
 		ofs.write(data, chunk_size);
 		delete[] data;
 
 		offset += chunk_size;
 	}
 
-	// CLOSE YOUR FILE
 	ofs.close();
 	delete[] buf2;
+
+	auto end = high_resolution_clock::now();
+	auto duration = duration_cast<milliseconds>(end - start).count();
+	cout << "Time taken to transfer " << fname << ": " << duration << " ms" << endl;
 }
 
 // Task 4: Request a new FIFORequestChannel
