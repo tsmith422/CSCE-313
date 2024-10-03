@@ -45,18 +45,25 @@ int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
 int32_t t_yield()
 {
         // TODO
+        // update current context
         getcontext(&contexts[current_context_idx].context);
         for (int i = 0; i < NUM_CTX; ++i)
         {
+                // search for VALID context entry
                 if (contexts[i].state == VALID)
                 {
+                        // swap to VALID context entry
                         int8_t old_current = current_context_idx;
                         current_context_idx = (uint8_t)i;
                         swapcontext(&contexts[old_current].context, &contexts[current_context_idx].context);
+
+                        // Compute the number of contexts in the VALID state
+                        
+                        return 0;
                 }
         }
 
-        return 0;
+        return -1;
 }
 
 void t_finish()
