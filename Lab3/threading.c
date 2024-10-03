@@ -58,7 +58,7 @@ int32_t t_yield()
                         swapcontext(&contexts[old_current].context, &contexts[current_context_idx].context);
 
                         // Compute the number of contexts in the VALID state
-                        
+
                         return 0;
                 }
         }
