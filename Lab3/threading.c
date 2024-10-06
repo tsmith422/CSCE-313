@@ -47,19 +47,28 @@ int32_t t_yield()
         // TODO
         // update current context
         getcontext(&contexts[current_context_idx].context);
-        for (int i = 0; i < NUM_CTX; ++i)
+        for (int i = 1; i <= NUM_CTX; ++i)
         {
+                int next_idx = (current_context_idx + i) % NUM_CTX;
                 // search for VALID context entry
-                if (contexts[i].state == VALID)
+                if (contexts[next_idx].state == VALID)
                 {
                         // swap to VALID context entry
-                        int8_t old_current = current_context_idx;
+                        uint8_t old_current = current_context_idx;
                         current_context_idx = (uint8_t)i;
                         swapcontext(&contexts[old_current].context, &contexts[current_context_idx].context);
 
                         // Compute the number of contexts in the VALID state
+                        int count = 0;
+                        for (int j = 0; j < NUM_CTX; ++j)
+                        {
+                                if (contexts[j].state == VALID && j != current_context_idx)
+                                {
+                                        count++;
+                                }
+                        }
 
-                        return 0;
+                        return count;
                 }
         }
 
