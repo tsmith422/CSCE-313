@@ -2,9 +2,10 @@
 
 void t_init()
 {
-        // TODO
-        // initialize contexts
-        for (int i = 0; i < NUM_CTX; ++i)
+        // main context
+        contexts[0].state = VALID;
+        // initialize remaining contexts
+        for (int i = 1; i < NUM_CTX; ++i)
         {
                 contexts[i].state = INVALID;
                 memset(&(contexts[i].context), 0, sizeof(ucontext_t));
@@ -16,7 +17,6 @@ void t_init()
 
 int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
 {
-        // TODO
         for (volatile int empty_idx = 0; empty_idx < NUM_CTX; ++empty_idx)
         {
                 // Find empty entry (INVALID state)
@@ -24,13 +24,13 @@ int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
                 {
                         getcontext(&contexts[empty_idx].context);
 
-                        // Allocate stack??
+                        // Allocate stack
                         contexts[empty_idx].context.uc_stack.ss_sp = (char *)malloc(STK_SZ);
                         contexts[empty_idx].context.uc_stack.ss_size = STK_SZ;
                         contexts[empty_idx].context.uc_stack.ss_flags = 0;
                         contexts[empty_idx].context.uc_link = NULL;
 
-                        // Modify content
+                        // Modify context
                         makecontext(&contexts[empty_idx].context, (void (*)())foo, 2, arg1, arg2);
 
                         // Set state so it's ready to be used (VALID)
@@ -44,22 +44,31 @@ int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
 
 int32_t t_yield()
 {
-        // TODO
         // update current context
         getcontext(&contexts[current_context_idx].context);
+
         for (int i = 0; i < NUM_CTX; ++i)
         {
+                int next_idx = (current_context_idx + i) % NUM_CTX;
                 // search for VALID context entry
-                if (contexts[i].state == VALID)
+                if (next_idx != current_context_idx && contexts[next_idx].state == VALID)
                 {
                         // swap to VALID context entry
-                        int8_t old_current = current_context_idx;
-                        current_context_idx = (uint8_t)i;
+                        uint8_t old_current = current_context_idx;
+                        current_context_idx = (uint8_t)next_idx;
                         swapcontext(&contexts[old_current].context, &contexts[current_context_idx].context);
 
                         // Compute the number of contexts in the VALID state
+                        int count = 0;
+                        for (int j = 0; j < NUM_CTX; ++j)
+                        {
+                                if (contexts[j].state == VALID && j != current_context_idx)
+                                {
+                                        ++count;
+                                }
+                        }
 
-                        return 0;
+                        return count;
                 }
         }
 
@@ -68,5 +77,16 @@ int32_t t_yield()
 
 void t_finish()
 {
-        // TODO
+        // Free the stack allocated for the current context
+        free(contexts[current_context_idx].context.uc_stack.ss_sp);
+        contexts[current_context_idx].context.uc_stack.ss_sp = NULL;
+
+        // Reset the context entry to all zero
+        memset(&contexts[current_context_idx].context, 0, sizeof(ucontext_t));
+
+        // Mark the context as DONE
+        contexts[current_context_idx].state = DONE;
+
+        // Yield to another context
+        t_yield();
 }
