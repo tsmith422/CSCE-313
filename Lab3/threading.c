@@ -47,11 +47,11 @@ int32_t t_yield()
         // TODO
         // update current context
         getcontext(&contexts[current_context_idx].context);
-        for (int i = 1; i <= NUM_CTX; ++i)
+        for (int i = 0; i < NUM_CTX; ++i)
         {
-                int next_idx = (current_context_idx + i) % NUM_CTX;
+                // int next_idx = (current_context_idx + i) % NUM_CTX;
                 // search for VALID context entry
-                if (contexts[next_idx].state == VALID)
+                if (contexts[i].state == VALID)
                 {
                         // swap to VALID context entry
                         uint8_t old_current = current_context_idx;
@@ -78,4 +78,15 @@ int32_t t_yield()
 void t_finish()
 {
         // TODO
+        // Free the stack allocated for the current context
+        free(contexts[current_context_idx].context.uc_stack.ss_sp);
+
+        // Reset the context entry to all zeros
+        memset(&contexts[current_context_idx], 0, sizeof(struct worker_context));
+
+        // Mark the context as DONE
+        contexts[current_context_idx].state = DONE;
+
+        // Yield to another context
+        t_yield();
 }
